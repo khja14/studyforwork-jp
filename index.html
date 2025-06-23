@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Todoリスト</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background: #f7f7f7;
+    }
+    h1 {
+      text-align: center;
+    }
+    form {
+      margin-bottom: 24px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      align-items: flex-end;
+    }
+    form input, form textarea {
+      padding: 6px;
+      font-size: 1em;
+    }
+    form label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.95em;
+    }
+    button {
+      padding: 6px 16px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 2px 8px #0001;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    th {
+      background: #f0f0f0;
+      cursor: pointer;
+      user-select: none;
+    }
+    tr.dragging {
+      opacity: 0.5;
+    }
+    tr.over {
+      outline: 2px dashed #007bff;
+    }
+    .delete-btn {
+      color: #fff;
+      background: #e74c3c;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 10px;
+      cursor: pointer;
+    }
+    .delete-btn:hover {
+      background: #c0392b;
+    }
+  </style>
+</head>
+<body>
+  <h1>Todoリスト</h1>
+  <div style="text-align:center; margin-bottom: 20px;">
+    <a href="apps/vanilla_js/todo_list.html">Todo List</a>
+  </div>
+  <script>
+    // --- Data and State ---
+    let todos = [];
+    let sortCol = null;
+    let sortAsc = true;
+    let dragSrcIndex = null;
+
+    // --- DOM Elements ---
+    const form = document.getElementById('todoForm');
+    const titleInput = document.getElementById('titleInput');
+    const contentInput = document.getElementById('contentInput');
+    const dateInput = document.getElementById('dateInput');
+    const tableBody = document.querySelector('#todoTable tbody');
+    const tableHead = document.querySelector('#todoTable thead');
+
+    // --- Render Function ---
+    function renderTable() {
+      tableBody.innerHTML = '';
+      todos.forEach((todo, idx) => {
+        const tr = document.createElement('tr');
+        tr.setAttribute('draggable', 'true');
+        tr.dataset.index = idx;
+
+        tr.innerHTML = `
+          <td>${escapeHTML(todo.title)}</td>
+          <td>${escapeHTML(todo.content)}</td>
+          <td>${escapeHTML(todo.date)}</td>
+          <td><button class="delete-btn" data-index="${idx}">削除</button></td>
+        `;
+
+        // Drag events
+        tr.addEventListener('dragstart', (e) => {
+          dragSrcIndex = idx;
+          tr.classList.add('dragging');
+        });
+        tr.addEventListener('dragend', (e) => {
+          dragSrcIndex = null;
+          tr.classList.remove('dragging');
+          document.querySelectorAll('tr.over').forEach(row => row.classList.remove('over'));
+        });
+        tr.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          if (dragSrcIndex !== null && dragSrcIndex !== idx) {
+            tr.classList.add('over');
+          }
+        });
+        tr.addEventListener('dragleave', (e) => {
+          tr.classList.remove('over');
+        });
+        tr.addEventListener('drop', (e) => {
+          e.preventDefault();
+          if (dragSrcIndex !== null && dragSrcIndex !== idx) {
+            const moved = todos.splice(dragSrcIndex, 1)[0];
+            todos.splice(idx, 0, moved);
+            renderTable();
+          }
+        });
+
+        tableBody.appendChild(tr);
+      });
+    }
+
+    // --- Sorting ---
+    tableHead.addEventListener('click', (e) => {
+      const th = e.target.closest('th[data-col]');
+      if (!th) return;
+      const col = th.dataset.col;
+      if (sortCol === col) {
+        sortAsc = !sortAsc;
+      } else {
+        sortCol = col;
+        sortAsc = true;
+      }
+      todos.sort((a, b) => {
+        if (a[col] < b[col]) return sortAsc ? -1 : 1;
+        if (a[col] > b[col]) return sortAsc ? 1 : -1;
+        return 0;
+      });
+      renderTable();
+    });
+
+    // --- Add Todo ---
+    form.addEventListener('submit', (e) => {
+      alert("Todoリストを更新しました。");
+      e.preventDefault();
+      const title = titleInput.value.trim();
+      const content = contentInput.value.trim();
+      const date = dateInput.value;
+      if (!title || !content || !date) return;
+      todos.push({ title, content, date });
+      form.reset();
+      renderTable();
+    });
+
+    // --- Delete Todo ---
+    tableBody.addEventListener('click', (e) => {
+      if (e.target.classList.contains('delete-btn')) {
+        const idx = Number(e.target.dataset.index);
+        todos.splice(idx, 1);
+        renderTable();
+      }
+    });
+
+    // --- Utility: Escape HTML ---
+    function escapeHTML(str) {
+      return str.replace(/[&<>"']/g, function(m) {
+        return ({
+          '&': '&',
+          '<': '<',
+          '>': '>',
+          '"': '"',
+          "'": "\'"
+        })[m];
+      });
+    }
+
+    // --- Initial Render ---
+    renderTable();
+  </script>
+</body>
+</html>
