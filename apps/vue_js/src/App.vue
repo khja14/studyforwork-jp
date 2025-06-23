@@ -23,6 +23,27 @@
             </v-list-item>
           </v-list>
         </v-menu>
+        
+        <br><br><br><br><br>
+        <v-menu offset-y>
+          <template #activator="{ props }">
+            <v-btn v-bind="props" class="menu-btn__overwrite">
+              <v-icon class="menu-btn-icon__overwrite" color="purple-darken-2" icon="mdi mdi-apps" size="x-large"></v-icon>
+            </v-btn>
+          </template>
+
+          <v-list>
+            <v-list-item @click="showRandomString">
+              <v-list-item-title>アクション1</v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="showRandomString">
+              <v-list-item-title>アクション2</v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="showRandomString">
+              <v-list-item-title>アクション3</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </v-container>
       <v-container class="mt-5">
         <v-btn color="secondary" @click="showRandomString">ランダムな文字列を表示</v-btn>
