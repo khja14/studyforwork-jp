@@ -1,0 +1,33 @@
+<template id="my-template">
+  <style>
+    button { color: red; }
+  </style>
+  <button id="inner-button">シャドウDOMのボタン</button>
+</template>
+
+<script>
+  class MyButton extends HTMLElement {
+    constructor() {
+      super();
+      const shadow = this.attachShadow({ mode: 'open' });
+      const template = document.getElementById('my-template');
+      const content = template.content.cloneNode(true);
+      shadow.appendChild(content);
+
+      // ボタンを取得してイベントを追加
+      const button = shadow.getElementById('inner-button');
+      button.addEventListener('click', () => {
+        alert('シャドウDOMのボタンがクリックされました！');
+      });
+    }
+  }
+
+  customElements.define('my-button', MyButton);
+</script>
+
+<div>
+  <h1>シャドウDOMの例</h1>
+  <p>以下のボタンはシャドウDOMを使用して作成されています。</p>
+  <my-button></my-button>
+  <p>*シャドウDOM = シンプルなhtmlでのコンポーネント化の機能</p>
+</div>
