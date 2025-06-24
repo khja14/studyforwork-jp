@@ -17,6 +17,17 @@
       font-size: 0.9em;
       margin-top: 0.5em;
     }
+    .dynamic-btn {
+      margin-top: 1em;
+      padding: 0.7em 1.5em;
+      font-size: 1em;
+      border: none;
+      border-radius: 6px;
+      background: #4caf50;
+      color: #fff;
+      cursor: pointer;
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
@@ -39,16 +50,29 @@
     dynamicDiv.className = 'dynamic-object';
     dynamicDiv.id = randomId;
     dynamicDiv.textContent = 'これは動的にIDが設定された要素です。';
+    dynamicDiv.addEventListener('click', function() {
+      alert(this.id);
+    });
 
     // IDを表示
     const idLabel = document.createElement('div');
     idLabel.className = 'id-label';
     idLabel.textContent = `ID: ${randomId}`;
 
+    // ボタンを作成（idとインナーテキストが同じ）
+    const dynamicBtn = document.createElement('button');
+    dynamicBtn.className = 'dynamic-btn';
+    dynamicBtn.id = randomId;
+    dynamicBtn.textContent = randomId;
+    dynamicBtn.addEventListener('click', function() {
+      alert(this.id);
+    });
+
     // DOMに追加
     const container = document.getElementById('container');
     container.appendChild(dynamicDiv);
     container.appendChild(idLabel);
+    container.appendChild(dynamicBtn);
   </script>
 </body>
 </html>
