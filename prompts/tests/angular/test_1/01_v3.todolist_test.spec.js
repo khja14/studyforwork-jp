@@ -13,25 +13,35 @@ test.describe('Angular TodoList 正常系E2Eテスト v3', () => {
   test('TodoList追加フロー', async ({ page }) => {
     await page.goto('https://studyforwork.jp/');
 
-    // 1. Angular カテゴリの TodoList リンクをクリック（Angularより後ろの最初のTodoList）
+    // 1. Angular カテゴリの TodoList リンクをクリック（Angularより後ろの最初のTodoList、IDやプロパティも考慮）
     try {
+      // Angularテキストの要素取得
       const angularText = await page.getByText('Angular');
       const angularHandle = await angularText.elementHandle();
+      const angularBox = await angularHandle.boundingBox();
+      // TodoListリンク候補をすべて取得
       const todoLinks = await page.locator('a', { hasText: 'TodoList' }).elementHandles();
       let targetLink = null;
       for (const link of todoLinks) {
+        // idやdata属性などプロパティも考慮
+        const id = await link.getAttribute('id');
+        const dataTest = await link.getAttribute('data-testid');
         const linkBox = await link.boundingBox();
-        const angularBox = await angularHandle.boundingBox();
         if (linkBox && angularBox && linkBox.y > angularBox.y) {
-          targetLink = link;
-          break;
+          // idやdata-testidが"angular-todolist"など明示的なら優先
+          if ((id && id.includes('angular')) || (dataTest && dataTest.includes('angular'))) {
+            targetLink = link;
+            break;
+          }
+          // そうでなければ最初に見つかったもの
+          if (!targetLink) targetLink = link;
         }
       }
       if (!targetLink) throw new Error('リンク特定失敗');
       await targetLink.click();
       results.push(['1. TodoListリンククリック', 'OK', '']);
     } catch (e) {
-      results.push(['1. TodoListリンククリック', 'NG', 'Angularより後ろのTodoListリンクが見つからない']);
+      results.push(['1. TodoListリンククリック', 'NG', 'Angularより後ろのTodoListリンクが見つからない/プロパティ特定不可']);
       expect(false, 'TodoListリンククリック失敗').toBe(true);
     }
 
@@ -44,9 +54,8 @@ test.describe('Angular TodoList 正常系E2Eテスト v3', () => {
       expect(false, 'TodoList表示確認失敗').toBe(true);
     }
 
-    // 3. タイトル, 内容, 日付フォームにデータ入力（ラベルとの距離関係で特定）
+    // 3. タイトル, 内容, 日付フォームにデータ入力（ラベル直後のinput/textareaを取得）
     try {
-      // ラベルの直後のinput/textareaを取得
       const getInputByLabel = async (labelText) => {
         const label = await page.getByText(labelText, { exact: true });
         const labelHandle = await label.elementHandle();
