@@ -3,7 +3,7 @@
 ```yaml
 - banner:
   - text: ヘッダータイトル
-  - button [expanded]
+  - button
 - main:
   - button "メニューを開く"
   - button
@@ -19,5 +19,4 @@
     - textbox "日付 日付"
   - button "保存"
   - text: "[]"
-- listbox: 1. マイページ ログイン マイページ ログアウト
 ```
