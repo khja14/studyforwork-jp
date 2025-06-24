@@ -1,0 +1,29 @@
+<div class="todo-form">
+  <input [(ngModel)]="newTodo.title" placeholder="タイトル" />
+  <input [(ngModel)]="newTodo.content" placeholder="内容" />
+  <input [(ngModel)]="newTodo.date" type="date" />
+  <button (click)="addTodo()">保存</button>
+</div>
+
+<table class="todo-table">
+  <thead>
+    <tr>
+      <th (click)="sortBy('title')">タイトル</th>
+      <th (click)="sortBy('content')">内容</th>
+      <th (click)="sortBy('date')">日付</th>
+      <th>操作</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let todo of todos; let i = index"
+        draggable="true"
+        (dragstart)="onDragStart(i)"
+        (drop)="onDrop(i)"
+        (dragover)="$event.preventDefault()">
+      <td>{{ todo.title }}</td>
+      <td>{{ todo.content }}</td>
+      <td>{{ todo.date }}</td>
+      <td><button (click)="deleteTodo(i)">削除</button></td>
+    </tr>
+  </tbody>
+</table>

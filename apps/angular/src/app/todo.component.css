@@ -1,0 +1,22 @@
+.todo-form {
+  margin-bottom: 16px;
+}
+.todo-form input {
+  margin-right: 8px;
+}
+.todo-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.todo-table th, .todo-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+}
+.todo-table th {
+  background: #f0f0f0;
+  cursor: pointer;
+}
+.todo-table tr[draggable] {
+  cursor: move;
+}
