@@ -1,8 +1,9 @@
 <template>
   <v-app>
+    <HeaderMenu />
     <v-main>
       <v-container class="mt-10">
-        
+        <!--  -->
         <br><br><br><br><br>
         <v-menu offset-y>
           <template #activator="{ props }">
@@ -52,12 +53,16 @@
       <div v-if="randomString" class="mt-3" style="font-size: 1.2em;">
         {{ randomString }}
       </div>
+      <!-- ToDOリストを↓に追加する -->
+       <TodoList></TodoList>
     </v-main>
   </v-app>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import HeaderMenu from './components/HeaderMenu.vue'
+import TodoList from './components/TodoList.vue'
 
 const randomString = ref('')
 
