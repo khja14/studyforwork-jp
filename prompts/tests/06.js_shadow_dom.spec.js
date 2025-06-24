@@ -15,7 +15,8 @@ test.describe('ShadowDOM ボタン E2Eテスト', () => {
     });
 
     // シャドウDOM内のボタンを取得してクリック
-    const button = await page.locator('my-button').locator('button#inner-button');
+    const button = await page.locator('my-button').locator('button#inner-button'); // MCP の生成
+    // const button = await page.getByRole('button', { name: 'シャドウDOMのボタン' });　// Tracking による生成
     await expect(button).toBeVisible();
     await button.click();
 
