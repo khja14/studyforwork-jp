@@ -1,4 +1,6 @@
 import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 interface Todo {
   title: string;
@@ -9,7 +11,9 @@ interface Todo {
 @Component({
   selector: 'app-todo',
   templateUrl: './todo.component.html',
-  styleUrls: ['./todo.component.css']
+  styleUrls: ['./todo.component.css'],
+  standalone: true,
+  imports: [FormsModule, CommonModule]
 })
 export class TodoComponent {
   todos: Todo[] = [];
