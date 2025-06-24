@@ -18,6 +18,7 @@ test.describe('ShadowDOM ボタン E2Eテスト', () => {
     const button = await page.locator('my-button').locator('button#inner-button'); // MCP の生成
     // const button = await page.getByRole('button', { name: 'シャドウDOMのボタン' });　// Tracking による生成
     await expect(button).toBeVisible();
+    // * ↓ MCP & Tracking の両生成方法のオブジェクトで、アクションを実行できない (メソッドは実行されるけど、画面に反映されない)
     await button.click();
 
     // アラートが表示されたか確認
