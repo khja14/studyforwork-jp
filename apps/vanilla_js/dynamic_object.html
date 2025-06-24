@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Dynamic Object with Random ID</title>
+  <style>
+    body { font-family: sans-serif; margin: 2em; }
+    .dynamic-object {
+      padding: 1em;
+      background: #f0f0f0;
+      border-radius: 8px;
+      margin-top: 1em;
+      display: inline-block;
+    }
+    .id-label {
+      color: #555;
+      font-size: 0.9em;
+      margin-top: 0.5em;
+    }
+  </style>
+</head>
+<body>
+  <h1>動的なIDが設定されたオブジェクト</h1>
+  <div id="container"></div>
+  <script>
+    // ランダムな文字列を生成する関数
+    function generateRandomId(length = 12) {
+      const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let result = '';
+      for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
+
+    // 動的オブジェクトを作成
+    const randomId = generateRandomId();
+    const dynamicDiv = document.createElement('div');
+    dynamicDiv.className = 'dynamic-object';
+    dynamicDiv.id = randomId;
+    dynamicDiv.textContent = 'これは動的にIDが設定された要素です。';
+
+    // IDを表示
+    const idLabel = document.createElement('div');
+    idLabel.className = 'id-label';
+    idLabel.textContent = `ID: ${randomId}`;
+
+    // DOMに追加
+    const container = document.getElementById('container');
+    container.appendChild(dynamicDiv);
+    container.appendChild(idLabel);
+  </script>
+</body>
+</html>
