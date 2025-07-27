@@ -12,11 +12,3 @@ jobs:
           node-version: '20'
       - run: npm install -g bats
       - run: bats -v
-
-  ecs-ping:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Ping ECS endpoint
-        run: |
-          # ここでECSのエンドポイントにpingを送る
-          curl -I https://your-ecs-endpoint.example.com/health

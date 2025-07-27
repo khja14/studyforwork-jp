@@ -19,4 +19,4 @@ jobs:
       - name: Ping ECS endpoint
         run: |
           # ここでECSのエンドポイントにpingを送る
-          curl -I https://your-ecs-endpoint.example.com/health
+          curl -I https://studyforwork.jp/
