@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>セキスペ午後対策：XML同期版</title>
+    <style>
+        :root { --main-bg: #f8f9fa; --card-bg: #ffffff; --primary-color: #2c3e50; --accent-color: #3498db; --delete-color: #e74c3c; --import-color: #9b59b6; }
+        body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif; background-color: var(--main-bg); margin: 0; padding: 40px 20px; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; padding-bottom: 120px; }
+        
+        .header-section { background: var(--primary-color); color: white; padding: 25px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .header-section h1 { margin: 0 0 15px 0; font-size: 1.4rem; }
+        .exam-meta { display: flex; gap: 15px; align-items: center; }
+        .exam-meta input { padding: 12px; border-radius: 6px; border: none; font-size: 1rem; width: 300px; }
+
+        .big-question { background: #e9ecef; padding: 20px; border-radius: 12px; margin-bottom: 30px; border-left: 8px solid var(--primary-color); animation: fadeIn 0.3s ease; }
+        .big-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .big-title { font-size: 1.25rem; font-weight: bold; color: var(--primary-color); }
+
+        .small-question { background: var(--card-bg); padding: 18px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+        .small-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .small-title { font-weight: bold; font-size: 0.95rem; color: #555; background: #f1f3f5; padding: 2px 10px; border-radius: 4px; }
+        
+        textarea { width: 100%; height: 85px; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; box-sizing: border-box; resize: vertical; line-height: 1.5; font-family: inherit; }
+        textarea:focus { border-color: var(--accent-color); outline: none; box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2); }
+
+        .counter { text-align: right; font-size: 0.85rem; color: #777; margin-top: 6px; }
+        .counter strong { color: var(--accent-color); font-size: 1.1rem; }
+
+        .btn { border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+        .btn-add-small { background: #fff; color: var(--accent-color); border: 2px solid var(--accent-color); margin-top: 5px; width: 100%; }
+        .btn-add-small:hover { background: var(--accent-color); color: white; }
+        .btn-add-big { background: var(--primary-color); color: white; padding: 15px 30px; }
+        .btn-delete { background: none; color: var(--delete-color); font-size: 0.85rem; font-weight: bold; }
+        .btn-delete:hover { background: rgba(231, 76, 60, 0.1); }
+        
+        .btn-save { background: #27ae60; color: white; padding: 15px 35px; }
+        .btn-import { background: var(--import-color); color: white; padding: 15px 30px; }
+
+        .floating-controls { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.9); padding: 20px; display: flex; justify-content: center; gap: 15px; backdrop-filter: blur(8px); border-top: 1px solid #ddd; z-index: 100; }
+        #fileInput { display: none; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-section">
+        <h1>資格試験 > 解答用紙</h1>
+        <div class="exam-meta">
+            <input type="text" id="examName" placeholder="試験名（例：R06 秋）">
+        </div>
+    </div>
+
+    <div id="mainCanvas"></div>
+
+    <div class="floating-controls">
+        <button class="btn btn-add-big" onclick="addBigQuestion()">＋ 大問追加</button>
+        <button class="btn btn-save" onclick="exportXML()">💾 答案の保存(XML)</button>
+        <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📂 答案の読込(XML)</button>
+        <input type="file" id="fileInput" accept=".xml" onchange="importXML(event)">
+    </div>
+</div>
+
+<script>
+    function renumberAll() {
+        const bigBlocks = document.querySelectorAll('.big-question');
+        bigBlocks.forEach((big, bIdx) => {
+            big.querySelector('.big-title').innerText = `大問 ${bIdx + 1}`;
+            big.querySelectorAll('.small-question').forEach((small, sIdx) => {
+                small.querySelector('.small-title').innerText = `小問 ${sIdx + 1}`;
+            });
+        });
+    }
+
+    function addBigQuestion(initialTitle = "") {
+        const canvas = document.getElementById('mainCanvas');
+        const uId = 'big_' + Date.now() + Math.random();
+        const bigDiv = document.createElement('div');
+        bigDiv.className = 'big-question';
+        bigDiv.id = uId;
+        bigDiv.innerHTML = `
+            <div class="big-header">
+                <span class="big-title">${initialTitle}</span>
+                <button class="btn btn-delete" onclick="removeElement('${uId}')">大問削除</button>
+            </div>
+            <div class="small-container"></div>
+            <button class="btn btn-add-small" onclick="addSmallQuestion('${uId}')">＋ 小問を追加</button>
+        `;
+        canvas.appendChild(bigDiv);
+        return uId;
+    }
+
+    function addSmallQuestion(bigId, content = "") {
+        const bigBlock = document.getElementById(bigId);
+        const container = bigBlock.querySelector('.small-container');
+        const suId = 'small_' + Date.now() + Math.random();
+        const sDiv = document.createElement('div');
+        sDiv.className = 'small-question';
+        sDiv.id = suId;
+        sDiv.innerHTML = `
+            <div class="small-header">
+                <span class="small-title"></span>
+                <button class="btn btn-delete" onclick="removeElement('${suId}')">小問削除</button>
+            </div>
+            <textarea oninput="updateCharCount(this)" placeholder="解答を記入...">${content}</textarea>
+            <div class="counter">文字数: <strong>${content.length}</strong></div>
+        `;
+        container.appendChild(sDiv);
+        renumberAll();
+    }
+
+    function updateCharCount(el) {
+        el.nextElementSibling.querySelector('strong').innerText = el.value.length;
+    }
+
+    function removeElement(id) {
+        const el = document.getElementById(id);
+        if(el && confirm('削除しますか？')) {
+            el.remove();
+            renumberAll();
+        }
+    }
+
+    // --- XML Export ---
+    function exportXML() {
+        const exam = document.getElementById('examName').value || "SC_Exam";
+        let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<exam_data>\n`;
+        xml += `  <title>${exam}</title>\n`;
+        xml += `  <date>${new Date().toLocaleString()}</date>\n`;
+        
+        document.querySelectorAll('.big-question').forEach((big) => {
+            xml += `  <big_question>\n`;
+            big.querySelectorAll('.small-question').forEach((small) => {
+                const text = small.querySelector('textarea').value;
+                xml += `    <small_question>\n      <answer>${escapeXml(text)}</answer>\n    </small_question>\n`;
+            });
+            xml += `  </big_question>\n`;
+        });
+        xml += `</exam_data>`;
+
+        const blob = new Blob([xml], { type: 'application/xml' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${exam}_data.xml`;
+        a.click();
+    }
+
+    // --- XML Import ---
+    function importXML(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
+            
+            // 既存の入力をクリアするか確認
+            if(document.querySelectorAll('.big-question').length > 0) {
+                if(!confirm("現在の内容を上書きして読み込みますか？")) return;
+            }
+            document.getElementById('mainCanvas').innerHTML = "";
+
+            // データの展開
+            document.getElementById('examName').value = xmlDoc.getElementsByTagName("title")[0].textContent;
+            
+            const bigs = xmlDoc.getElementsByTagName("big_question");
+            for (let i = 0; i < bigs.length; i++) {
+                const bId = addBigQuestion();
+                const smalls = bigs[i].getElementsByTagName("small_question");
+                for (let j = 0; j < smalls.length; j++) {
+                    const text = smalls[j].getElementsByTagName("answer")[0].textContent;
+                    addSmallQuestion(bId, text);
+                }
+            }
+            renumberAll();
+        };
+        reader.readAsText(file);
+    }
+
+    function escapeXml(unsafe) {
+        return unsafe.replace(/[<>&'"]/g, function (c) {
+            switch (c) {
+                case '<': return '&lt;'; case '>': return '&gt;';
+                case '&': return '&amp;'; case '\'': return '&apos;';
+                case '"': return '&quot;';
+            }
+        });
+    }
+
+    addBigQuestion();
+    addSmallQuestion(document.querySelector('.big-question').id);
+</script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>URL一括オープン（5件ごと遅延）</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f9f9f9; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        textarea { width: 100%; height: 200px; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; }
+        button { width: 100%; padding: 15px; margin-top: 10px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 16px; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .status { margin-top: 10px; font-weight: bold; color: #555; }
+        .history-section { margin-top: 30px; border-top: 2px solid #eee; padding-top: 10px; }
+        .history-item { padding: 8px; border-bottom: 1px solid #eee; font-size: 14px; word-break: break-all; }
+        .history-item span { color: #888; margin-right: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>URL一括オープン</h2>
+    <p style="font-size: 0.9em; color: #666;">5件開くごとに1秒待機します。</p>
+    
+    <textarea id="urlInput" placeholder="URL コメント..."></textarea>
+    <button id="openBtn" onclick="startOpening()">実行（5件ずつ処理）</button>
+    <div id="statusMsg" class="status"></div>
+
+    <div class="history-section">
+        <h3>表示履歴</h3>
+        <div id="historyList"></div>
+    </div>
+</div>
+
+<script>
+    async function startOpening() {
+        const input = document.getElementById('urlInput');
+        const btn = document.getElementById('openBtn');
+        const statusMsg = document.getElementById('statusMsg');
+        const historyList = document.getElementById('historyList');
+
+        const parts = input.value.split(/[\s\n\t]+/);
+        const urls = parts.filter(part => /^https?:\/\//.test(part));
+
+        if (urls.length === 0) {
+            alert("URLが見つかりませんでした。");
+            return;
+        }
+
+        // 実行中のUI制御
+        btn.disabled = true;
+        input.disabled = true;
+
+        for (let i = 0; i < urls.length; i++) {
+            const url = urls[i];
+            
+            // タブを開く
+            window.open(url, '_blank');
+
+            // 履歴に追加
+            const time = new Date().toLocaleTimeString();
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `<span>[${time}]</span> <a href="${url}" target="_blank">${url}</a>`;
+            historyList.insertBefore(item, historyList.firstChild);
+
+            // 進捗表示
+            statusMsg.innerText = `処理中: ${i + 1} / ${urls.length} 件目`;
+
+            // 5の倍数番目のURLを開いた後、かつ最後のURLでない場合に1秒待機
+            if ((i + 1) % 5 === 0 && (i + 1) < urls.length) {
+                statusMsg.innerText = `待機中（1秒）... 次の5件を準備しています`;
+                await new Promise(resolve => setTimeout(resolve, 3000));
+            }
+        }
+
+        statusMsg.innerText = "完了しました！";
+        btn.disabled = false;
+        input.disabled = false;
+    }
+</script>
+
+</body>
+</html>
