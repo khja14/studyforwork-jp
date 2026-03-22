@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>セキスペ午後対策：XML同期版</title>
     <style>
-        :root { --main-bg: #f8f9fa; --card-bg: #ffffff; --primary-color: #2c3e50; --accent-color: #3498db; --delete-color: #e74c3c; --import-color: #9b59b6; }
+        :root { --main-bg: #f8f9fa; --card-bg: #ffffff; --primary-color: #2c3e50; --accent-color: #3498db; --delete-color: #e74c3c; --import-color: #9b59b6; --add-field-color: #27ae60; }
         body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif; background-color: var(--main-bg); margin: 0; padding: 40px 20px; color: #333; }
         .container { max-width: 900px; margin: 0 auto; padding-bottom: 120px; }
         
@@ -21,7 +21,11 @@
         .small-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .small-title { font-weight: bold; font-size: 0.95rem; color: #555; background: #f1f3f5; padding: 2px 10px; border-radius: 4px; }
         
-        textarea { width: 100%; height: 85px; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; box-sizing: border-box; resize: vertical; line-height: 1.5; font-family: inherit; }
+        .answer-field-group { margin-bottom: 15px; border-bottom: 1px dashed #eee; padding-bottom: 10px; }
+        .answer-field-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .answer-label { font-size: 0.8rem; color: #888; }
+        
+        textarea { width: 100%; height: 70px; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; box-sizing: border-box; resize: vertical; line-height: 1.5; font-family: inherit; }
         textarea:focus { border-color: var(--accent-color); outline: none; box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2); }
 
         .counter { text-align: right; font-size: 0.85rem; color: #777; margin-top: 6px; }
@@ -30,9 +34,13 @@
         .btn { border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; }
         .btn-add-small { background: #fff; color: var(--accent-color); border: 2px solid var(--accent-color); margin-top: 5px; width: 100%; }
         .btn-add-small:hover { background: var(--accent-color); color: white; }
+        .btn-add-field { background: none; color: var(--add-field-color); border: 1px solid var(--add-field-color); font-size: 0.8rem; margin-bottom: 10px; }
+        .btn-add-field:hover { background: var(--add-field-color); color: white; }
+        
         .btn-add-big { background: var(--primary-color); color: white; padding: 15px 30px; }
         .btn-delete { background: none; color: var(--delete-color); font-size: 0.85rem; font-weight: bold; }
         .btn-delete:hover { background: rgba(231, 76, 60, 0.1); }
+        .btn-delete-field { color: var(--delete-color); font-size: 0.75rem; cursor: pointer; border: none; background: none; }
         
         .btn-save { background: #27ae60; color: white; padding: 15px 35px; }
         .btn-import { background: var(--import-color); color: white; padding: 15px 30px; }
@@ -92,7 +100,7 @@
         return uId;
     }
 
-    function addSmallQuestion(bigId, content = "") {
+    function addSmallQuestion(bigId) {
         const bigBlock = document.getElementById(bigId);
         const container = bigBlock.querySelector('.small-container');
         const suId = 'small_' + Date.now() + Math.random();
@@ -104,11 +112,30 @@
                 <span class="small-title"></span>
                 <button class="btn btn-delete" onclick="removeElement('${suId}')">小問削除</button>
             </div>
+            <div class="answer-container"></div>
+            <button class="btn btn-add-field" onclick="addAnswerField('${suId}')">＋ 解答欄を追加</button>
+        `;
+        container.appendChild(sDiv);
+        addAnswerField(suId); // 初期状態で1つ追加
+        renumberAll();
+    }
+
+    function addAnswerField(smallId, content = "") {
+        const smallBlock = document.getElementById(smallId);
+        const container = smallBlock.querySelector('.answer-container');
+        const fieldId = 'field_' + Date.now() + Math.random();
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'answer-field-group';
+        fieldDiv.id = fieldId;
+        fieldDiv.innerHTML = `
+            <div class="answer-field-header">
+                <span class="answer-label">解答欄</span>
+                <button class="btn-delete-field" onclick="removeField('${fieldId}')">削除</button>
+            </div>
             <textarea oninput="updateCharCount(this)" placeholder="解答を記入...">${content}</textarea>
             <div class="counter">文字数: <strong>${content.length}</strong></div>
         `;
-        container.appendChild(sDiv);
-        renumberAll();
+        container.appendChild(fieldDiv);
     }
 
     function updateCharCount(el) {
@@ -123,18 +150,37 @@
         }
     }
 
+    function removeField(id) {
+        const el = document.getElementById(id);
+        if(el) el.remove();
+    }
+
     // --- XML Export ---
     function exportXML() {
-        const exam = document.getElementById('examName').value || "SC_Exam";
+        const rawExamName = document.getElementById('examName').value.trim();
+        const examName = rawExamName || "Exam_Data";
+        
+        // ファイル名用日付フォーマット: yyyy-mm-dd_HH-MM-ss
+        const now = new Date();
+        const timestamp = now.getFullYear() + '-' + 
+            String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+            String(now.getDate()).padStart(2, '0') + '_' + 
+            String(now.getHours()).padStart(2, '0') + '-' + 
+            String(now.getMinutes()).padStart(2, '0') + '-' + 
+            String(now.getSeconds()).padStart(2, '0');
+
         let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<exam_data>\n`;
-        xml += `  <title>${exam}</title>\n`;
-        xml += `  <date>${new Date().toLocaleString()}</date>\n`;
+        xml += `  <title>${escapeXml(examName)}</title>\n`;
+        xml += `  <date>${now.toLocaleString()}</date>\n`;
         
         document.querySelectorAll('.big-question').forEach((big) => {
             xml += `  <big_question>\n`;
             big.querySelectorAll('.small-question').forEach((small) => {
-                const text = small.querySelector('textarea').value;
-                xml += `    <small_question>\n      <answer>${escapeXml(text)}</answer>\n    </small_question>\n`;
+                xml += `    <small_question>\n`;
+                small.querySelectorAll('textarea').forEach((textarea) => {
+                    xml += `      <answer>${escapeXml(textarea.value)}</answer>\n`;
+                });
+                xml += `    </small_question>\n`;
             });
             xml += `  </big_question>\n`;
         });
@@ -143,7 +189,7 @@
         const blob = new Blob([xml], { type: 'application/xml' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `${exam}_data.xml`;
+        a.download = `${timestamp}_${examName}.xml`;
         a.click();
     }
 
@@ -157,13 +203,11 @@
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
             
-            // 既存の入力をクリアするか確認
             if(document.querySelectorAll('.big-question').length > 0) {
                 if(!confirm("現在の内容を上書きして読み込みますか？")) return;
             }
             document.getElementById('mainCanvas').innerHTML = "";
 
-            // データの展開
             document.getElementById('examName').value = xmlDoc.getElementsByTagName("title")[0].textContent;
             
             const bigs = xmlDoc.getElementsByTagName("big_question");
@@ -171,13 +215,32 @@
                 const bId = addBigQuestion();
                 const smalls = bigs[i].getElementsByTagName("small_question");
                 for (let j = 0; j < smalls.length; j++) {
-                    const text = smalls[j].getElementsByTagName("answer")[0].textContent;
-                    addSmallQuestion(bId, text);
+                    // 小問を追加（初期フィールドは削除してXMLから再構築）
+                    const container = document.getElementById(bId).querySelector('.small-container');
+                    const suId = 'small_' + Date.now() + Math.random();
+                    const sDiv = document.createElement('div');
+                    sDiv.className = 'small-question';
+                    sDiv.id = suId;
+                    sDiv.innerHTML = `
+                        <div class="small-header">
+                            <span class="small-title"></span>
+                            <button class="btn btn-delete" onclick="removeElement('${suId}')">小問削除</button>
+                        </div>
+                        <div class="answer-container"></div>
+                        <button class="btn btn-add-field" onclick="addAnswerField('${suId}')">＋ 解答欄を追加</button>
+                    `;
+                    container.appendChild(sDiv);
+
+                    const answers = smalls[j].getElementsByTagName("answer");
+                    for (let k = 0; k < answers.length; k++) {
+                        addAnswerField(suId, answers[k].textContent);
+                    }
                 }
             }
             renumberAll();
         };
         reader.readAsText(file);
+        event.target.value = ""; // 同じファイルを再度読み込めるようにリセット
     }
 
     function escapeXml(unsafe) {
@@ -190,8 +253,9 @@
         });
     }
 
-    addBigQuestion();
-    addSmallQuestion(document.querySelector('.big-question').id);
+    // 初期の表示
+    const firstBigId = addBigQuestion();
+    addSmallQuestion(firstBigId);
 </script>
 </body>
 </html>
