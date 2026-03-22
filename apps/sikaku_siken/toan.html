@@ -7,7 +7,7 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <title>資格試験: 答案</title>
     <style>
-        :root { --main-bg: #f8f9fa; --card-bg: #ffffff; --primary-color: #2c3e50; --accent-color: #3498db; --delete-color: #e74c3c; --import-color: #9b59b6; --add-field-color: #27ae60; --score-color: #f39c12; }
+        :root { --main-bg: #f8f9fa; --card-bg: #ffffff; --primary-color: #2c3e50; --accent-color: #3498db; --delete-color: #e74c3c; --import-color: #9b59b6; --add-field-color: #27ae60; --score-color: #f39c12; --reset-color: #7f8c8d; }
         body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif; background-color: var(--main-bg); margin: 0; padding: 20px 10px; color: #333; }
         
         /* コンテナのパディング調整 */
@@ -63,6 +63,7 @@
         
         .btn-save { background: #27ae60; color: white; flex: 1; min-width: 140px; }
         .btn-import { background: var(--import-color); color: white; flex: 1; min-width: 140px; }
+        .btn-reset { background: var(--reset-color); color: white; flex: 1; min-width: 140px; }
 
         /* フッターボタンエリアのスマホ最適化 */
         .floating-controls { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); padding: 15px; display: flex; justify-content: center; gap: 10px; backdrop-filter: blur(8px); border-top: 1px solid #ddd; z-index: 100; flex-wrap: wrap; }
@@ -74,7 +75,7 @@
             .header-section h1 { font-size: 1.4rem; }
             .btn-add-field { width: auto; }
             .floating-controls { padding: 20px; gap: 15px; }
-            .btn-save, .btn-import { flex: none; width: auto; padding: 15px 35px; }
+            .btn-save, .btn-import, .btn-reset { flex: none; width: auto; padding: 15px 35px; }
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -89,7 +90,7 @@
             <a href="/" class="btn-top">← トップページ</a>
         </div>
         <div class="exam-meta">
-            <input type="text" id="examName" placeholder="試験名（例：R06 秋）">
+            <input type="text" id="examName" placeholder="試験名（例：SC R06 秋）" oninput="autoSave()">
         </div>
     </div>
 
@@ -100,6 +101,7 @@
     </div>
 
     <div class="floating-controls">
+        <button class="btn btn-reset" onclick="resetAll()">🗑️ リセット</button>
         <button class="btn btn-save" onclick="exportXML()">💾 保存(XML)</button>
         <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📂 読込(XML)</button>
         <input type="file" id="fileInput" accept=".xml" onchange="importXML(event)">
@@ -107,7 +109,9 @@
 </div>
 
 <script>
-    // ※JavaScript部分は変更ありませんが、そのまま含めています。
+    // 定数: localStorageのキー
+    const STORAGE_KEY = 'exam_toan_data';
+
     function renumberAll() {
         const bigBlocks = document.querySelectorAll('.big-question');
         bigBlocks.forEach((big, bIdx) => {
@@ -128,9 +132,10 @@
             total += Number(input.value) || 0;
         });
         bigBlock.querySelector('.big-score-sum').innerText = `合計: ${total} 点`;
+        autoSave(); // 点数変更時も保存
     }
 
-    function addBigQuestion(initialTitle = "") {
+    function addBigQuestion(initialTitle = "", isInitial = false) {
         const canvas = document.getElementById('mainCanvas');
         const uId = 'big_' + Date.now() + Math.random();
         const bigDiv = document.createElement('div');
@@ -148,7 +153,7 @@
             <button class="btn btn-add-small" onclick="addSmallQuestion('${uId}')">＋ 小問を追加</button>
         `;
         canvas.appendChild(bigDiv);
-        if(initialTitle === "") addSmallQuestion(uId);
+        if(initialTitle === "" && !isInitial) addSmallQuestion(uId);
         renumberAll();
         return uId;
     }
@@ -195,11 +200,16 @@
                     <button class="btn-delete-field" onclick="removeField('${fieldId}', '${bigId}')">削除</button>
                 </div>
             </div>
-            <textarea oninput="updateCharCount(this)" placeholder="解答を記入...">${content}</textarea>
+            <textarea oninput="handleTextareaInput(this)" placeholder="解答を記入...">${content}</textarea>
             <div class="counter">文字数: <strong>${content.length}</strong></div>
         `;
         container.appendChild(fieldDiv);
         updateBigQuestionTotal(bigId);
+    }
+
+    function handleTextareaInput(el) {
+        updateCharCount(el);
+        autoSave();
     }
 
     function updateCharCount(el) {
@@ -211,6 +221,7 @@
         if(el && confirm('削除しますか？')) {
             el.remove();
             renumberAll();
+            autoSave();
         }
     }
 
@@ -219,8 +230,91 @@
         if(el) {
             el.remove();
             updateBigQuestionTotal(bigId);
+            autoSave();
         }
     }
+
+    // --- ローカルストレージ機能 ---
+
+    function autoSave() {
+        const data = {
+            examName: document.getElementById('examName').value,
+            bigQuestions: []
+        };
+
+        document.querySelectorAll('.big-question').forEach((big) => {
+            const bigData = { smallQuestions: [] };
+            big.querySelectorAll('.small-question').forEach((small) => {
+                const smallData = { answers: [] };
+                small.querySelectorAll('.answer-field-group').forEach((group) => {
+                    smallData.answers.push({
+                        text: group.querySelector('textarea').value,
+                        score: group.querySelector('.input-score').value
+                    });
+                });
+                bigData.smallQuestions.push(smallData);
+            });
+            data.bigQuestions.push(bigData);
+        });
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadSavedData() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) {
+            addBigQuestion(); // データがない場合はデフォルトの1つを追加
+            return;
+        }
+
+        try {
+            const data = JSON.parse(saved);
+            document.getElementById('examName').value = data.examName || "";
+            document.getElementById('mainCanvas').innerHTML = "";
+
+            data.bigQuestions.forEach(bigData => {
+                const bId = addBigQuestion("読み込み中...", true);
+                const bBlock = document.getElementById(bId);
+                const container = bBlock.querySelector('.small-container');
+                container.innerHTML = "";
+
+                bigData.smallQuestions.forEach(smallData => {
+                    const suId = 'small_' + Date.now() + Math.random();
+                    const sDiv = document.createElement('div');
+                    sDiv.className = 'small-question';
+                    sDiv.id = suId;
+                    sDiv.innerHTML = `
+                        <div class="small-header">
+                            <span class="small-title"></span>
+                            <button class="btn btn-delete" onclick="removeElement('${suId}')">削除</button>
+                        </div>
+                        <div class="answer-container"></div>
+                        <button class="btn btn-add-field" onclick="addAnswerField('${suId}')">＋ 解答欄を追加</button>
+                    `;
+                    container.appendChild(sDiv);
+
+                    smallData.answers.forEach(ans => {
+                        addAnswerField(suId, ans.text, ans.score);
+                    });
+                });
+            });
+            renumberAll();
+        } catch (e) {
+            console.error("保存データの読み込みに失敗しました", e);
+            addBigQuestion();
+        }
+    }
+
+    function resetAll() {
+        if (confirm('すべての入力内容と構造を削除してリセットしますか？')) {
+            localStorage.removeItem(STORAGE_KEY);
+            document.getElementById('examName').value = "";
+            document.getElementById('mainCanvas').innerHTML = "";
+            addBigQuestion();
+        }
+    }
+
+    // --- XML・その他既存機能 ---
 
     function exportXML() {
         const rawExamName = document.getElementById('examName').value.trim();
@@ -279,7 +373,7 @@
             
             const bigs = xmlDoc.getElementsByTagName("big_question");
             for (let i = 0; i < bigs.length; i++) {
-                const bId = addBigQuestion("読み込み中..."); 
+                const bId = addBigQuestion("読み込み中...", true); 
                 const bBlock = document.getElementById(bId);
                 const container = bBlock.querySelector('.small-container');
                 container.innerHTML = ""; 
@@ -316,6 +410,7 @@
                 }
             }
             renumberAll();
+            autoSave(); // インポート後も自動保存
         };
         reader.readAsText(file);
         event.target.value = "";
@@ -333,7 +428,8 @@
         });
     }
 
-    addBigQuestion();
+    // 初回起動時
+    loadSavedData();
 </script>
 </body>
 </html>
