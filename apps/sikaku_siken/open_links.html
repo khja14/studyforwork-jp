@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="referrer" content="no-referrer">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <title>URL一括オープン（自動タイトル生成版）</title>
+    <title>URL一括オープン</title>
     <style>
         :root { 
             --main-bg: #f8f9fa; 
@@ -13,6 +13,7 @@
             --accent-color: #3498db; 
             --success-color: #27ae60; 
             --text-muted: #888;
+            --danger-color: #e74c3c;
         }
         body { 
             font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif; 
@@ -52,6 +53,18 @@
             margin-bottom: 25px;
         }
         .instruction { font-size: 0.9rem; color: #666; margin-bottom: 15px; line-height: 1.6; }
+
+        /* 免責事項のスタイル追加 */
+        .disclaimer-box {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff5f5;
+            border: 1px solid #feb2b2;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #63171b;
+        }
+        .disclaimer-box strong { color: var(--danger-color); }
 
         textarea { 
             width: 100%; 
@@ -145,9 +158,17 @@
             ・ Chromeの場合: 「このサイトのポップアップを常に許可する」<br>
             ※端末やブラウザのセキュリティ設定によっては、URLの自動オープンが制限されることがあります。
         </p>
+        
         <textarea id="urlInput" placeholder="例：&#10;Google https://google.com&#10;https://example.com/docs/api"></textarea>
-        <button id="openBtn" class="btn-execute" onclick="startOpening()">実行（5件ずつ処理）</button>
-        <div id="statusMsg" class="status">待機中</div>
+        
+        <div class="disclaimer-box">
+            <strong>【利用上の注意・免責事項】</strong><br>
+            ・本ツールを特定のサイトへの攻撃（DoS攻撃、過度な負荷をかける行為等）や悪意ある目的に使用することを固く禁じます。<br>
+            ・本ツールの利用により生じたトラブル、損害、不利益等について、運営者は一切の責任を負いません。すべて利用者の自己責任において使用してください。
+        </div>
+
+        <button id="openBtn" class="btn-execute" onclick="startOpening()">実行</button>
+        <div id="statusMsg" class="status">実行ボタンをクリックしてください</div>
     </div>
 
     <div class="history-section animate-in">
@@ -175,7 +196,6 @@
                 const urlStr = urlMatch[0];
                 let title = trimmed.replace(urlStr, '').trim();
 
-                // コメントがない場合の自動生成ロジック
                 if (!title) {
                     try {
                         const urlObj = new URL(urlStr);
@@ -194,7 +214,7 @@
         }
 
         if (dataList.length === 0) {
-            alert("有効なURLが見つかりませんでした。");
+            alert("有効なURLが見てかりませんでした。");
             return;
         }
 
