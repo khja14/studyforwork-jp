@@ -7,7 +7,12 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <title>資格試験: 答案</title>
     <style>
-        :root { --main-bg: #f8f9fa; --card-bg: #ffffff; --primary-color: #2c3e50; --accent-color: #3498db; --delete-color: #e74c3c; --import-color: #9b59b6; --add-field-color: #27ae60; --score-color: #f39c12; --reset-color: #7f8c8d; --model-answer-bg: #f0f7ff; --scoring-memo-bg: #fffdf5; }
+        :root { 
+            --main-bg: #f8f9fa; --card-bg: #ffffff; --primary-color: #2c3e50; 
+            --accent-color: #3498db; --delete-color: #e74c3c; --import-color: #9b59b6; 
+            --add-field-color: #27ae60; --score-color: #f39c12; --reset-color: #7f8c8d; 
+            --model-answer-bg: #f0f7ff; --scoring-memo-bg: #fffdf5; 
+        }
         body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif; background-color: var(--main-bg); margin: 0; padding: 20px 10px; color: #333; }
         
         .container { max-width: 1000px; margin: 0 auto; padding-bottom: 140px; }
@@ -16,10 +21,12 @@
         .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
         .header-section h1 { margin: 0; font-size: 1.2rem; }
         
-        .total-score-display { background: #fff; color: var(--score-color); padding: 5px 15px; border-radius: 8px; font-weight: bold; border: 2px solid var(--score-color); font-size: 1.1rem; }
+        /* モード切替スイッチ */
+        .mode-switch { background: rgba(255,255,255,0.1); padding: 5px; border-radius: 30px; display: flex; gap: 5px; }
+        .mode-btn { border: none; background: none; color: white; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; font-weight: bold; transition: all 0.2s; opacity: 0.6; }
+        .mode-btn.active { background: white; color: var(--primary-color); opacity: 1; }
 
-        .btn-top { color: white; text-decoration: none; border: 1px solid rgba(255,255,255,0.5); padding: 6px 15px; border-radius: 20px; font-size: 0.8rem; transition: all 0.2s; white-space: nowrap; }
-        .btn-top:hover { background: rgba(255,255,255,0.1); border-color: white; }
+        .total-score-display { background: #fff; color: var(--score-color); padding: 5px 15px; border-radius: 8px; font-weight: bold; border: 2px solid var(--score-color); font-size: 1.1rem; }
 
         .exam-meta { display: flex; gap: 10px; align-items: center; }
         .exam-meta input { padding: 12px; border-radius: 6px; border: none; font-size: 1rem; width: 100%; max-width: 400px; box-sizing: border-box; }
@@ -50,12 +57,10 @@
         
         .my-answer { height: 80px; }
         
-        /* 正当（模範解答）スタイル */
         .model-answer-area { margin-top: 10px; }
         .model-answer-label { font-size: 0.75rem; color: #3498db; font-weight: bold; margin-bottom: 4px; display: block; }
         .textarea-model { background-color: var(--model-answer-bg); border-color: #bcd9f5; height: 60px; }
 
-        /* 採点メモスタイル */
         .scoring-memo-area { margin-top: 10px; }
         .scoring-memo-label { font-size: 0.75rem; color: #d35400; font-weight: bold; margin-bottom: 4px; display: block; }
         .textarea-memo { background-color: var(--scoring-memo-bg); border-color: #ffeaa7; height: 60px; }
@@ -81,6 +86,9 @@
         .floating-controls { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); padding: 15px; display: flex; justify-content: center; gap: 10px; backdrop-filter: blur(8px); border-top: 1px solid #ddd; z-index: 100; flex-wrap: wrap; }
         #fileInput { display: none; }
 
+        /* モードによる表示制御用クラス */
+        body.mode-answer .scoring-only { display: none !important; }
+
         @media (min-width: 600px) {
             body { padding: 40px 20px; }
             .floating-controls { padding: 20px; gap: 15px; }
@@ -90,14 +98,17 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body>
-
-<div class="container">
+<body class="mode-scoring"> <div class="container">
     <div class="header-section">
         <div class="header-top">
-            <h1>資格試験 > 解答用紙</h1>
-            <div class="total-score-display" id="grandTotal">総合計: 0 点</div>
-            <a href="/" class="btn-top">← トップページ</a>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <h1>資格試験 > 答案</h1>
+                <div class="mode-switch">
+                    <button class="mode-btn" id="btnModeAnswer" onclick="setMode('answer')">📝 回答</button>
+                    <button class="mode-btn active" id="btnModeScoring" onclick="setMode('scoring')">⚖️ 採点</button>
+                </div>
+            </div>
+            <div class="total-score-display scoring-only" id="grandTotal">総合計: 0 点</div>
         </div>
         <div class="exam-meta">
             <input type="text" id="examName" placeholder="試験名（例：SC R06 秋）" oninput="autoSave()">
@@ -120,6 +131,28 @@
 
 <script>
     const STORAGE_KEY = 'exam_toan_data_v2';
+    let currentMode = 'scoring';
+
+    // モード切替
+    function setMode(mode) {
+        currentMode = mode;
+        const body = document.body;
+        const btnAnswer = document.getElementById('btnModeAnswer');
+        const btnScoring = document.getElementById('btnModeScoring');
+
+        if (mode === 'answer') {
+            body.classList.add('mode-answer');
+            body.classList.remove('mode-scoring');
+            btnAnswer.classList.add('active');
+            btnScoring.classList.remove('active');
+        } else {
+            body.classList.remove('mode-answer');
+            body.classList.add('mode-scoring');
+            btnAnswer.classList.remove('active');
+            btnScoring.classList.add('active');
+        }
+        autoSave();
+    }
 
     function renumberAll() {
         const bigBlocks = document.querySelectorAll('.big-question');
@@ -165,7 +198,7 @@
             <div class="big-header">
                 <div class="big-title-area">
                     <span class="big-title">${initialTitle}</span>
-                    <span class="big-score-sum">合計: 0 点</span>
+                    <span class="big-score-sum scoring-only">合計: 0 点</span>
                 </div>
                 <button class="btn btn-delete" onclick="removeElement('${uId}')">削除</button>
             </div>
@@ -212,7 +245,7 @@
             <div class="answer-field-header">
                 <span class="answer-label">解答欄</span>
                 <input type="text" class="input-q-memo" placeholder="設問メモ (配点条件など)" value="${qMemo}" oninput="autoSave()">
-                <div class="score-input-wrap">
+                <div class="score-input-wrap scoring-only">
                     <label>採点:</label>
                     <input type="number" class="input-score" value="${score}" placeholder="0" min="0" oninput="updateBigQuestionTotal('${bigId}')">
                     <label>点</label>
@@ -223,12 +256,12 @@
             <textarea class="my-answer" oninput="handleTextareaInput(this)" placeholder="自分の解答を記入...">${content}</textarea>
             <div class="counter">文字数: <strong>${content.length}</strong></div>
             
-            <div class="model-answer-area">
+            <div class="model-answer-area scoring-only">
                 <label class="model-answer-label">【 正当 / 模範解答 】</label>
                 <textarea class="textarea-model" oninput="autoSave()" placeholder="正解を記入...">${modelAnswer}</textarea>
             </div>
 
-            <div class="scoring-memo-area">
+            <div class="scoring-memo-area scoring-only">
                 <label class="scoring-memo-label">【 採点メモ / 復習 】</label>
                 <textarea class="textarea-memo" oninput="autoSave()" placeholder="間違えた原因、正解との差分、次回への対策など...">${sMemo}</textarea>
             </div>
@@ -267,6 +300,7 @@
     function autoSave() {
         const data = {
             examName: document.getElementById('examName').value,
+            currentMode: currentMode,
             bigQuestions: []
         };
         document.querySelectorAll('.big-question').forEach((big) => {
@@ -298,11 +332,12 @@
         try {
             const data = JSON.parse(saved);
             document.getElementById('examName').value = data.examName || "";
+            if (data.currentMode) setMode(data.currentMode);
+            
             document.getElementById('mainCanvas').innerHTML = "";
             data.bigQuestions.forEach(bigData => {
                 const bId = addBigQuestion("読み込み中...", true);
-                const bBlock = document.getElementById(bId);
-                const container = bBlock.querySelector('.small-container');
+                const container = document.getElementById(bId).querySelector('.small-container');
                 container.innerHTML = "";
                 bigData.smallQuestions.forEach(smallData => {
                     const suId = 'small_' + Date.now() + Math.random();
@@ -335,8 +370,6 @@
     function exportXML() {
         const rawExamName = document.getElementById('examName').value.trim();
         const examName = rawExamName || "Exam_Data";
-        
-        // 秒まで含めたタイムスタンプ (YYYY-MM-DD_HHMMSS)
         const now = new Date();
         const timestamp = now.getFullYear() + '-' + 
                           String(now.getMonth() + 1).padStart(2, '0') + '-' + 
