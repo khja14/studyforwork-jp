@@ -1,5 +1,8 @@
 name: 'AI inference'
 # https://qiita.com/tsuzuki_takaaki/items/b2d3624bf18cbd9f254e
+# 生成量に限界がある（500文字くらい）。
+# => 使い方としては、コードのレビューや、テストレポートの解析などが考えられる。
+#     = レポート生成には向かない。
 
 on: [workflow_dispatch, push]
 
