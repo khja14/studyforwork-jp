@@ -1,0 +1,20 @@
+name: 'AI inference'
+# https://qiita.com/tsuzuki_takaaki/items/b2d3624bf18cbd9f254e
+
+on: workflow_dispatch
+
+jobs:
+  inference:
+    permissions:
+      models: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Local Action
+        id: inference
+        uses: actions/ai-inference@v2
+        with:
+          prompt: 'Hello!'
+
+      - name: Print Output
+        id: output
+        run: echo "${{ steps.inference.outputs.response }}"
