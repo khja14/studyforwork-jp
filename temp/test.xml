@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="System Integration Tests" tests="25" failures="4" errors="2" time="128.456">
+  <testsuite name="UI_Login_Suite" tests="10" failures="1" errors="0" time="45.200">
+    <testcase name="test_render_login_page" classname="ui.login.View" time="1.500" />
+    <testcase name="test_input_validation_email" classname="ui.login.Validation" time="0.800" />
+    <testcase name="test_input_validation_password" classname="ui.login.Validation" time="0.750" />
+    <testcase name="test_remember_me_cookie" classname="ui.login.Session" time="2.100" />
+    <testcase name="test_forgot_password_link" classname="ui.login.Navigation" time="1.200" />
+    <testcase name="test_successful_login" classname="ui.login.Action" time="3.400" />
+    <testcase name="test_invalid_credentials" classname="ui.login.Action" time="2.800" />
+    <testcase name="test_social_login_google" classname="ui.login.External" time="5.600" />
+    <testcase name="test_social_login_github" classname="ui.login.External" time="4.900" />
+    <testcase name="test_login_button_style" classname="ui.login.UI" time="1.100">
+      <failure message="Color mismatch" type="AssertionError">
+        Expected background-color: #007bff, but found #ff0000.
+        The button should follow the brand color guidelines.
+      </failure>
+    </testcase>
+  </testsuite>
+
+  <testsuite name="API_User_Management" tests="10" failures="2" errors="1" time="38.123">
+    <testcase name="get_user_profile_success" classname="api.user.GetProfile" time="0.450" />
+    <testcase name="update_user_display_name" classname="api.user.UpdateProfile" time="0.680" />
+    <testcase name="upload_profile_image_jpeg" classname="api.user.Avatar" time="2.500" />
+    <testcase name="list_users_pagination_page1" classname="api.user.List" time="0.920" />
+    <testcase name="list_users_pagination_page2" classname="api.user.List" time="0.880" />
+    <testcase name="delete_inactive_user" classname="api.user.Admin" time="1.200" />
+    <testcase name="get_user_not_found" classname="api.user.GetProfile" time="0.320" />
+    <testcase name="create_user_duplicate_email" classname="api.user.Create" time="0.550">
+      <failure message="Wrong status code" type="HTTPError">
+        Expected 409 Conflict, but received 500 Internal Server Error.
+      </failure>
+    </testcase>
+    <testcase name="create_user_weak_password" classname="api.user.Create" time="0.420">
+      <failure message="Validation failed" type="ValidationError">
+        Server accepted a password with only 4 characters. Security policy requires 8+.
+      </failure>
+    </testcase>
+    <testcase name="api_db_health_check" classname="api.system.Health" time="0.100">
+      <error message="Connection timeout" type="TimeoutException">
+        Failed to connect to PostgreSQL at db.internal.local:5432.
+        Check network security group settings.
+      </error>
+    </testcase>
+  </testsuite>
+
+  <testsuite name="Performance_Benchmarking" tests="5" failures="1" errors="1" time="45.133">
+    <testcase name="load_test_100_concurrent_users" classname="perf.Load" time="15.000" />
+    <testcase name="load_test_500_concurrent_users" classname="perf.Load" time="22.500" />
+    <testcase name="spike_test_api_gateway" classname="perf.Spike" time="5.400" />
+    <testcase name="memory_leak_check_24h" classname="perf.Memory" time="1.233">
+      <failure message="Memory threshold exceeded" type="MemoryError">
+        RAM usage increased by 450MB over 10 minutes without releasing.
+      </failure>
+    </testcase>
+    <testcase name="stress_test_db_io" classname="perf.Stress" time="0.000">
+      <error message="Disk full" type="IOException">
+        No space left on device /var/lib/docker/volumes.
+      </error>
+    </testcase>
+  </testsuite>
+</testsuites>

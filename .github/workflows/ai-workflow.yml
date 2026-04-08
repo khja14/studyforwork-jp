@@ -16,6 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4 # リポジトリのファイルをワークスペースに展開
 
+      # ==================================
       - name: Read file content
         id: read_file
         # 例として main.py を読み込む場合
@@ -41,3 +42,32 @@ jobs:
       - name: Print Output
         id: output
         run: echo "${{ steps.inference.outputs.response }}"
+
+      # ==================================
+      - name: Read file content
+        id: read_file
+        # 例として main.py を読み込む場合
+        run: |
+          # 境界文字はEOFじゃなくてもよい
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64 | tr -dc 'a-zA-Z0-9')
+          echo "FILE_CONTENT<<$EOF" >> $GITHUB_ENV
+          cat temp/test.xml >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV  # ←重要：ファイルの末尾に強制的に改行を入れる
+          echo "$EOF" >> $GITHUB_ENV
+
+      - name: Review Program
+        id: inference2
+        uses: actions/ai-inference@v2
+        with:
+          prompt: |
+            以下のXMLはあるテストのレポートになります。
+            これを解析して、テストの結果を要約してください。
+            また、グラフィカルなレポートをHTML形式のコードで作成してください。
+            
+            ファイル名: temp/test.xml
+            内容:
+            ${{ env.FILE_CONTENT }}
+
+      - name: Print Output
+        id: output
+        run: echo "${{ steps.inference2.outputs.response }}"
