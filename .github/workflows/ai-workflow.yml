@@ -45,7 +45,7 @@ jobs:
 
       # ==================================
       - name: Read file content
-        id: read_file
+        id: read_file2
         # 例として main.py を読み込む場合
         run: |
           # 境界文字はEOFじゃなくてもよい
@@ -69,5 +69,5 @@ jobs:
             ${{ env.FILE_CONTENT }}
 
       - name: Print Output
-        id: output
+        id: output2
         run: echo "${{ steps.inference2.outputs.response }}"
