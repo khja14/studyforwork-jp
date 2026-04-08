@@ -1,19 +1,41 @@
 name: 'AI inference'
 # https://qiita.com/tsuzuki_takaaki/items/b2d3624bf18cbd9f254e
 
-on: workflow_dispatch
+on: [workflow_dispatch, push]
+
+env: 
+  VAL: "Hello, world!"
 
 jobs:
   inference:
     permissions:
+      contents: read # ファイル読み取りに必要
       models: read
     runs-on: ubuntu-latest
     steps:
-      - name: Test Local Action
+      - name: Checkout repository
+        uses: actions/checkout@v4 # リポジトリのファイルをワークスペースに展開
+
+      - name: Read file content
+        id: read_file
+        # 例として main.py を読み込む場合
+        run: |
+          # 境界文字はEOFじゃなくてもよい
+          EOF=$(dd if=/dev/urandom bs=15 count=1 (at)base64)
+          echo "FILE_CONTENT<<$EOF" >> $GITHUB_ENV
+          cat apps/sikaku_siken/toan.html >> $GITHUB_ENV
+          echo "$EOF" >> $GITHUB_ENV
+
+      - name: Review Program
         id: inference
         uses: actions/ai-inference@v2
         with:
-          prompt: 'Hello!'
+          prompt: |
+            以下のファイルをレビューし、改善点やバグの可能性を指摘してください。
+            
+            ファイル名: main.py
+            内容:
+            ${{ env.FILE_CONTENT }}
 
       - name: Print Output
         id: output
