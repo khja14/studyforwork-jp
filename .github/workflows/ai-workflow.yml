@@ -72,7 +72,22 @@ jobs:
             内容:
             ${{ env.FILE_CONTENT }}
 
-      - name: Print Output
+      - name: Save AI response to file
+        # AIの回答を環境変数の衝突なしにファイルへ書き出します
+        run: |
+          cat <<'EOF_AI' > report.html
+          ${{ steps.inference2.outputs.response }}
+          EOF_AI
+
+      - name: Upload Report Artifact
+        # 生成された report.html をGitHub上に保存します
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-generated-report
+          path: report.html
+          retention-days: 5 # 5日間保存（任意で調整してください）
+
+      - name: Print Output2
         id: output2
         # 修正箇所: 変数展開によるエラーを防ぐため、printf か heredoc を検討しますが
         # 最も安全にログに出すには、一度環境変数に入れてから cat するのが定石です。
