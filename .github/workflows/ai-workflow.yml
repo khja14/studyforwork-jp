@@ -21,7 +21,7 @@ jobs:
         # 例として main.py を読み込む場合
         run: |
           # 境界文字はEOFじゃなくてもよい
-          EOF=$(dd if=/dev/urandom bs=15 count=1 (at)base64)
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
           echo "FILE_CONTENT<<$EOF" >> $GITHUB_ENV
           cat apps/sikaku_siken/toan.html >> $GITHUB_ENV
           echo "$EOF" >> $GITHUB_ENV
