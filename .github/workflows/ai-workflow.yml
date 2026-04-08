@@ -24,6 +24,7 @@ jobs:
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64 | tr -dc 'a-zA-Z0-9')
           echo "FILE_CONTENT<<$EOF" >> $GITHUB_ENV
           cat apps/sikaku_siken/toan.html >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV  # ←重要：ファイルの末尾に強制的に改行を入れる
           echo "$EOF" >> $GITHUB_ENV
 
       - name: Review Program
